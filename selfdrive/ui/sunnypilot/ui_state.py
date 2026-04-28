@@ -38,8 +38,10 @@ class UIStateSP:
     self.sunnylink_state = SunnylinkState()
 
     self.onroad_brightness_timer: int = 0
-    self.custom_interactive_timeout: int = 0
-    self._sp_initialized: bool = False
+    self.custom_interactive_timeout: int = self.params.get("InteractivityTimeout", return_default=True)
+
+    self.update_params()
+    self.reset_onroad_sleep_timer()
 
   def update(self) -> None:
     if self.sunnylink_enabled:
@@ -127,7 +129,7 @@ class UIStateSP:
       self.CP_SP = messaging.log_from_bytes(CP_SP_bytes, custom.CarParamsSP)
       self.has_icbm = self.CP_SP.intelligentCruiseButtonManagementAvailable and self.params.get_bool("IntelligentCruiseButtonManagement")
 
-    self._enforce_constraints()
+    self._enforce_sp_constraints()
     self.active_bundle = self.params.get("ModelManager_ActiveBundle")
     self.blindspot = self.params.get_bool("BlindSpot")
     self.chevron_metrics = self.params.get("ChevronInfo")
@@ -153,14 +155,10 @@ class UIStateSP:
     self.boot_offroad_mode = self.params.get("DeviceBootMode", return_default=True)
     self.always_offroad = self.params.get_bool("OffroadMode")
 
-    if not self._sp_initialized:
-      self._sp_initialized = True
-      self.reset_onroad_sleep_timer()
-
-  def _enforce_constraints(self) -> None:
-    has_long = self.has_longitudinal_control
+  def _enforce_sp_constraints(self) -> None:
+    has_long = getattr(self, 'has_longitudinal_control', False)
     has_icbm = self.has_icbm
-    CP = self.CP
+    CP = getattr(self, 'CP', None)
 
     if CP is not None:
       # Angle steering: no torque-based lateral controls
@@ -214,6 +212,7 @@ class DeviceSP:
     if _ui_state.onroad_brightness_timer != 0:
       if _ui_state.onroad_brightness == OnroadBrightness.AUTO_DARK:
         return max(30.0, cur_brightness)
+      # For AUTO (Default) and Manual modes (while timer running), use standard brightness
       return cur_brightness
 
     # 0: Auto (Default), 1: Auto (Dark), 2: Screen Off

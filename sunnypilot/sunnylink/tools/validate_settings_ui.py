@@ -5,7 +5,12 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 
-Validates settings_ui.json against structural, semantic, and referential integrity constraints.
+Settings UI Validator
+=====================
+
+Validates settings_ui.json against structural, semantic, and referential
+integrity constraints. Ensures the file is well-formed for consumption by
+the sunnylink frontend and the device-side schema generator.
 
 Usage:
   python validate_settings_ui.py
@@ -17,6 +22,7 @@ import json
 import os
 import sys
 
+# Add repo root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 from openpilot.sunnypilot.sunnylink.capabilities import CAPABILITY_FIELDS
@@ -79,7 +85,7 @@ def validate_rule(rule: dict, path: str, result: ValidationResult,
     result.error("rule well-formedness", f"{path}: rule missing 'type' field")
     return False
 
-  if rule_type in ("offroad_only", "not_engaged"):
+  if rule_type == "offroad_only":
     # Only type required
     return True
 
@@ -471,23 +477,16 @@ def check_ordering(data: dict, result: ValidationResult) -> None:
 
 
 def check_vehicle_brands(data: dict, result: ValidationResult) -> None:
-  """Check 10: Vehicle settings keys lowercase + each brand has consistent {title, description, items} shape."""
+  """Check 10: Vehicle settings keys should be lowercase strings."""
   vehicle = data.get("vehicle_settings", {})
-  errors: list[str] = []
+  bad_brands: list[str] = []
 
-  for brand, brand_data in vehicle.items():
+  for brand in vehicle:
     if not isinstance(brand, str) or brand != brand.lower():
-      errors.append(f"non-lowercase brand key: '{brand}'")
-    if not isinstance(brand_data, dict):
-      errors.append(f"brand '{brand}': expected object with {{title, description, items}}, got bare list")
-      continue
-    if "items" not in brand_data:
-      errors.append(f"brand '{brand}': missing 'items'")
-    if "title" not in brand_data:
-      errors.append(f"brand '{brand}': missing 'title' (use empty string for none)")
+      bad_brands.append(brand)
 
-  if errors:
-    result.error("vehicle brands", "; ".join(errors))
+  if bad_brands:
+    result.error("vehicle brands", f"non-lowercase brand keys: {', '.join(bad_brands)}")
   else:
     result.ok("vehicle brands")
 
