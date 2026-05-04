@@ -75,6 +75,7 @@ build/
 *.vsix
 .history
 .ionide
+.vs/*
 .vscode/*
 .history/
 !.vscode/settings.json
