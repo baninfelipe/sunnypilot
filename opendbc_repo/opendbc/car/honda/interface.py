@@ -211,7 +211,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       # Experimental low-speed steering for the 2025 Brazilian City EPS only.
       if any(fw.ecu == structs.CarParams.Ecu.eps and fw.fwVersion.rstrip(b"\x00") == b"39990-T14-B510" for fw in car_fw):
-        ret.minSteerSpeed = 8. * CV.KPH_TO_MS
+        ret.minSteerSpeed = 20. * CV.KPH_TO_MS
 
     else:
       ret.steerActuatorDelay = 0.15
