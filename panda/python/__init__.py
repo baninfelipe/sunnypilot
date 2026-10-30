@@ -121,8 +121,6 @@ ensure_health_packet_version = partial(ensure_version, "health", "HEALTH_PACKET_
 
 class Panda:
 
-  SERIAL_DEBUG = 0
-  SERIAL_SOM_DEBUG = 4
 
   USB_VIDS = (0xbbaa, 0x3801)  # 0x3801 is comma's registered VID
   USB_PIDS = (0xddee, 0xddcc)
@@ -148,6 +146,8 @@ class Panda:
   HEALTH_FLAG_HEARTBEAT_LOST = 1 << 4
   HEALTH_FLAG_SAFETY_RX_CHECKS_INVALID = 1 << 5
   HEALTH_FLAG_SOM_RESET_TRIGGERED = 1 << 6
+  HEALTH_FLAG_NMI_RESET = 1 << 7
+  HEALTH_FLAG_HARDFAULT_RESET = 1 << 8
 
   H7_DEVICES = [HW_TYPE_RED_PANDA, HW_TYPE_TRES, HW_TYPE_CUATRO, HW_TYPE_BODY]
   SUPPORTED_DEVICES = H7_DEVICES
@@ -251,10 +251,10 @@ class Panda:
     return isinstance(self._handle, PandaSpiHandle)
 
   @classmethod
-  def spi_connect(cls, serial, ignore_version=False):
+  def spi_connect(cls, serial):
     try:
       handle = PandaSpiHandle()
-      dat = handle.get_protocol_version()
+      dat = handle.get_info()
     except PandaSpiException:
       return None, None, None, False
 
@@ -263,15 +263,10 @@ class Panda:
     if pid not in (0xcc, 0xee):
       raise PandaProtocolMismatch(f"invalid bootstub status ({pid=}). reflash panda")
     bootstub = pid == 0xee
-    spi_version = dat[14]
 
     # did we get the right panda?
     if serial is not None and spi_serial != serial:
       return None, None, None, False
-
-    # ensure our protocol version matches the panda
-    if (not ignore_version) and spi_version != handle.PROTOCOL_VERSION:
-      raise PandaProtocolMismatch(f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda")
 
     # got a device and all good
     return None, handle, spi_serial, bootstub
@@ -350,7 +345,7 @@ class Panda:
 
   @classmethod
   def spi_list(cls):
-    _, _, serial, _ = cls.spi_connect(None, ignore_version=True)
+    _, _, serial, _ = cls.spi_connect(None)
     if serial is not None:
       return [serial, ]
     return []
@@ -551,6 +546,8 @@ class Panda:
       "sbu1_voltage_mV": a[17],
       "sbu2_voltage_mV": a[18],
       "som_reset_triggered": bool(flags & self.HEALTH_FLAG_SOM_RESET_TRIGGERED),
+      "nmi_reset": bool(flags & self.HEALTH_FLAG_NMI_RESET),
+      "hardfault_reset": bool(flags & self.HEALTH_FLAG_HARDFAULT_RESET),
       "sound_output_level": a[19],
       "temperature": a[20] - 40.0,
       "controls_allowed_lateral": a[21] & 1,
@@ -698,16 +695,6 @@ class Panda:
   def set_canfd_auto(self, bus, auto):
       self._handle.controlWrite(Panda.REQUEST_OUT, 0xe8, bus, int(auto), b'')
 
-  def set_uart_baud(self, uart, rate):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe4, uart, int(rate / 300), b'')
-
-  def set_uart_parity(self, uart, parity):
-    # parity, 0=off, 1=even, 2=odd
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe2, uart, parity, b'')
-
-  def set_uart_callback(self, uart, install):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe3, uart, int(install), b'')
-
   # ******************* can *******************
 
   # The panda will NAK CAN writes when there is CAN congestion.
@@ -720,7 +707,7 @@ class Panda:
 
   @ensure_can_packet_version
   def can_send_many(self, arr, *, fd=False, timeout=CAN_SEND_TIMEOUT_MS):
-    snds = pack_can_buffer(arr, chunk=(not self.spi), fd=fd)
+    snds = pack_can_buffer(arr, chunk=True, fd=fd)
     for tx in snds:
       while len(tx) > 0:
         bs = self._handle.bulkWrite(3, tx, timeout=timeout)
@@ -753,24 +740,15 @@ class Panda:
     """
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf1, bus, 0, b'')
 
-  # ******************* serial *******************
-
-  def serial_read(self, port_number, maxlen=1024):
-    ret = b''
-    while 1:
-      r = bytes(self._handle.controlRead(Panda.REQUEST_IN, 0xe0, port_number, 0, 0x40))
-      if len(r) == 0 or len(ret) >= maxlen:
+  def debug_read(self, maxlen=1024):
+    """Read up to maxlen bytes of internal debug logs."""
+    ret = bytearray()
+    while len(ret) < maxlen:
+      dat = self._handle.controlRead(Panda.REQUEST_IN, 0xb6, 0, 0, min(0x40, maxlen - len(ret)))
+      if not dat:
         break
-      ret += r
-    return ret
-
-  def serial_write(self, port_number, ln):
-    ret = 0
-    if isinstance(ln, str):
-      ln = bytes(ln, 'utf-8')
-    for i in range(0, len(ln), 0x20):
-      ret += self._handle.bulkWrite(2, struct.pack("B", port_number) + ln[i:i + 0x20])
-    return ret
+      ret.extend(dat)
+    return bytes(ret)
 
   def send_heartbeat(self, engaged=True):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, engaged, 0, b'')

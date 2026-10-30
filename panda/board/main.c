@@ -25,16 +25,6 @@
 #include "board/can_comms.h"
 #include "board/main_comms.h"
 
-
-// ********************* Serial debugging *********************
-
-void debug_ring_callback(uart_ring *ring) {
-  char rcv;
-  while (get_char(ring, &rcv)) {
-    (void)put_char(ring, rcv);  // misra-c2012-17.7: cast to void is ok: debug function
-  }
-}
-
 // ****************************** safety mode ******************************
 
 // this is the only way to leave silent mode
@@ -114,13 +104,19 @@ static void __attribute__ ((noinline)) enable_fpu(void) {
 
 // called at 8Hz
 static void tick_handler(void) {
-  static uint32_t siren_countdown = 0; // siren plays while countdown > 0
-  static uint32_t controls_allowed_countdown = 0;
-  static uint8_t prev_harness_status = HARNESS_STATUS_NC;
-  static uint8_t loop_counter = 0U;
-  static bool relay_malfunction_prev = false;
-
   if (TICK_TIMER->SR != 0U) {
+    static uint32_t siren_countdown = 0; // siren plays while countdown > 0
+    static uint32_t controls_allowed_countdown = 0;
+    static uint8_t prev_harness_status = HARNESS_STATUS_NC;
+    static uint8_t loop_counter = 0U;
+    static bool relay_malfunction_prev = false;
+
+    heartbeat_tick_counter += 1U;
+
+    // start the siren early on power loss
+    if ((controls_allowed_countdown > 0U) && (heartbeat_tick_counter > 2U) && (current_board->read_voltage_mV() < 6000U)) {
+      siren_countdown = 3U;
+    }
 
     // siren
     current_board->set_siren((loop_counter & 1U) && (siren_enabled || (siren_countdown > 0U)));
@@ -153,15 +149,6 @@ static void tick_handler(void) {
 
     // decimated to 1Hz
     if (loop_counter == 0U) {
-      //puth(usart1_dma); print(" "); puth(DMA2_Stream5->M0AR); print(" "); puth(DMA2_Stream5->NDTR); print("\n");
-      #ifdef DEBUG
-        print("** blink ");
-        print("rx:"); puth4(can_rx_q.r_ptr); print("-"); puth4(can_rx_q.w_ptr); print("  ");
-        print("tx1:"); puth4(can_tx1_q.r_ptr); print("-"); puth4(can_tx1_q.w_ptr); print("  ");
-        print("tx2:"); puth4(can_tx2_q.r_ptr); print("-"); puth4(can_tx2_q.w_ptr); print("  ");
-        print("tx3:"); puth4(can_tx3_q.r_ptr); print("-"); puth4(can_tx3_q.w_ptr); print("\n");
-      #endif
-
       // set green LED to be controls allowed
       led_set(LED_GREEN, controls_allowed);
 
@@ -260,7 +247,7 @@ static void tick_handler(void) {
       ignition_can_cnt += 1U;
 
       // synchronous safety check
-      safety_tick(&current_safety_config);
+      safety_tick();
     }
 
     loop_counter++;
@@ -295,6 +282,7 @@ int main(void) {
 
   print("Config:\n");
   print("  Board type: 0x"); puth(hw_type); print("\n");
+  print("  MCU UID: "); hexdump((const uint8_t *)UID_BASE, 12);
 
   // init board
   current_board->init();
@@ -324,9 +312,6 @@ int main(void) {
   REGISTER_INTERRUPT(TICK_TIMER_IRQ, tick_handler, 10U, FAULT_INTERRUPT_RATE_TICK)
   tick_timer_init();
 
-#ifdef DEBUG
-  print("DEBUG ENABLED\n");
-#endif
   // enable USB (right before interrupts or enum can fail!)
   usb_init();
 
@@ -339,6 +324,14 @@ int main(void) {
   led_set(LED_GREEN, false);
   led_set(LED_BLUE, false);
 
+  if (fault_cookie == NMI_COOKIE) {
+    reset_flags |= HEALTH_FLAG_NMI_RESET;
+  }
+  if (fault_cookie == HARDFAULT_COOKIE) {
+    reset_flags |= HEALTH_FLAG_HARDFAULT_RESET;
+  }
+  fault_cookie = 0U;
+
   print("**** INTERRUPTS ON ****\n");
   enable_interrupts();
 
@@ -350,32 +343,20 @@ int main(void) {
     }
     #endif
     if (!power_save_enabled) {
-      #ifdef DEBUG_FAULTS
-      if (fault_status == FAULT_STATUS_NONE) {
-      #endif
-        // useful for debugging, fade breaks = panda is overloaded
-        for (uint32_t fade = 0U; fade < MAX_LED_FADE; fade += 1U) {
-          led_set(LED_RED, true);
-          delay(fade >> 4);
-          led_set(LED_RED, false);
-          delay((MAX_LED_FADE - fade) >> 4);
-        }
+      // useful for debugging, fade breaks = panda is overloaded
+      for (uint32_t fade = 0U; fade < MAX_LED_FADE; fade += 1U) {
+        led_set(LED_RED, true);
+        delay(fade >> 4);
+        led_set(LED_RED, false);
+        delay((MAX_LED_FADE - fade) >> 4);
+      }
 
-        for (uint32_t fade = MAX_LED_FADE; fade > 0U; fade -= 1U) {
-          led_set(LED_RED, true);
-          delay(fade >> 4);
-          led_set(LED_RED, false);
-          delay((MAX_LED_FADE - fade) >> 4);
-        }
-
-      #ifdef DEBUG_FAULTS
-      } else {
-          led_set(LED_RED, 1);
-          delay(512000U);
-          led_set(LED_RED, 0);
-          delay(512000U);
-        }
-      #endif
+      for (uint32_t fade = MAX_LED_FADE; fade > 0U; fade -= 1U) {
+        led_set(LED_RED, true);
+        delay(fade >> 4);
+        led_set(LED_RED, false);
+        delay((MAX_LED_FADE - fade) >> 4);
+      }
     } else {
       if ((hw_type == HW_TYPE_CUATRO) && !current_board->read_som_gpio()) {
         assert_fatal(current_safety_mode == SAFETY_SILENT, "Error: Entering low power mode while not in SAFETY_SILENT. Hanging\n");

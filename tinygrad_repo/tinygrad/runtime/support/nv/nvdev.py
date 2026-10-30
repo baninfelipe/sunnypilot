@@ -5,7 +5,7 @@ from tinygrad.runtime.autogen import pci
 from tinygrad.runtime.support.memory import TLSFAllocator, MemoryManager, AddrSpace
 from tinygrad.runtime.support.nv.ip import NV_FLCN, NV_FLCN_COT, NV_GSP
 from tinygrad.runtime.support.system import PCIDevice
-from tinygrad.runtime.support.hcq import MMIOInterface
+from tinygrad.runtime.support.memory import MMIOInterface
 
 NV_DEBUG = getenv("NV_DEBUG", 0)
 
@@ -67,7 +67,7 @@ class NVPageTableEntry:
     return self.read_fields(entry_id)[f'address{small}{sys}'] << 12
 
 class NVMemoryManager(MemoryManager):
-  va_allocator = TLSFAllocator((1 << 44), base=0x1000000000) # global for all devices.
+  va_allocator = TLSFAllocator((1 << 44), base=0x1000000000)
 
   def on_range_mapped(self): self.dev.NV_VIRTUAL_FUNCTION_PRIV_MMU_INVALIDATE.write((1 << 0) | (1 << 1) | (1 << 6) | (1 << 31))
 
@@ -95,9 +95,6 @@ class NVDev:
   def rreg(self, addr:int) -> int: return self.mmio[addr // 4]
 
   def _early_ip_init(self):
-    self.reg_names:set[str] = set()
-    self.reg_offsets:dict[str, tuple[int, int]] = {}
-
     self.include("nv_ref", "")
     self.include("dev_fb", "tu102")
     self.include("dev_gc6_island", "ga102")

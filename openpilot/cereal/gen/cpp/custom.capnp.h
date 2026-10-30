@@ -121,13 +121,13 @@ CAPNP_DECLARE_ENUM(Runner, c99c128a7e247b05);
 CAPNP_DECLARE_SCHEMA(d76d000d361ae87c);
 CAPNP_DECLARE_SCHEMA(e60821c0505ad473);
 CAPNP_DECLARE_SCHEMA(f35cc4560bbf6ec2);
-CAPNP_DECLARE_SCHEMA(bc6a5bae100ebf77);
-CAPNP_DECLARE_SCHEMA(d8f6f2a7a0704037);
-enum class DynamicExperimentalControlState_d8f6f2a7a0704037: uint16_t {
+CAPNP_DECLARE_SCHEMA(ef519b61cc8ee263);
+CAPNP_DECLARE_SCHEMA(aa2720b5f33a6eda);
+enum class DynamicExperimentalControlState_aa2720b5f33a6eda: uint16_t {
   ACC,
   BLENDED,
 };
-CAPNP_DECLARE_ENUM(DynamicExperimentalControlState, d8f6f2a7a0704037);
+CAPNP_DECLARE_ENUM(DynamicExperimentalControlState, aa2720b5f33a6eda);
 CAPNP_DECLARE_SCHEMA(c18d99475c5c17a3);
 CAPNP_DECLARE_SCHEMA(da72fb762a1047ee);
 CAPNP_DECLARE_SCHEMA(c0dddb0f62704ef6);
@@ -178,6 +178,7 @@ enum class LongitudinalPlanSource_ad47440556d96ec4: uint16_t {
 };
 CAPNP_DECLARE_ENUM(LongitudinalPlanSource, ad47440556d96ec4);
 CAPNP_DECLARE_SCHEMA(a567bce822ae28fe);
+CAPNP_DECLARE_SCHEMA(c5a54619396de4c7);
 CAPNP_DECLARE_SCHEMA(da96579883444c35);
 CAPNP_DECLARE_SCHEMA(f6e831752fcdf793);
 CAPNP_DECLARE_SCHEMA(b8007ed8a646b5e6);
@@ -196,7 +197,7 @@ enum class EventName_b8007ed8a646b5e6: uint16_t {
   SILENT_PARK_BRAKE,
   CONTROLS_MISMATCH_LATERAL,
   HYUNDAI_RADAR_TRACKS_CONFIRMED,
-  EXPERIMENTAL_MODE_SWITCHED,
+  EXPERIMENTAL_MODE_SWITCHED_D_E_P_R_E_C_A_T_E_D,
   WRONG_CAR_MODE_ALERT_ONLY,
   PEDAL_PRESSED_ALERT_ONLY,
   LANE_TURN_LEFT,
@@ -471,12 +472,13 @@ struct LongitudinalPlanSP {
   class Reader;
   class Builder;
   class Pipeline;
-  struct DynamicExperimentalControl;
+  struct DynamicExperimentalControlDEPRECATED;
   struct SmartCruiseControl;
   struct SpeedLimit;
   typedef ::capnp::schemas::LongitudinalPlanSource_ad47440556d96ec4 LongitudinalPlanSource;
 
   struct E2eAlerts;
+  struct Deprecated;
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(f35cc4560bbf6ec2, 2, 5)
@@ -486,17 +488,17 @@ struct LongitudinalPlanSP {
   };
 };
 
-struct LongitudinalPlanSP::DynamicExperimentalControl {
-  DynamicExperimentalControl() = delete;
+struct LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED {
+  DynamicExperimentalControlDEPRECATED() = delete;
 
   class Reader;
   class Builder;
   class Pipeline;
-  typedef ::capnp::schemas::DynamicExperimentalControlState_d8f6f2a7a0704037 DynamicExperimentalControlState;
+  typedef ::capnp::schemas::DynamicExperimentalControlState_aa2720b5f33a6eda DynamicExperimentalControlState;
 
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(bc6a5bae100ebf77, 1, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(ef519b61cc8ee263, 1, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -614,6 +616,21 @@ struct LongitudinalPlanSP::E2eAlerts {
 
   struct _capnpPrivate {
     CAPNP_DECLARE_STRUCT_HEADER(a567bce822ae28fe, 1, 0)
+    #if !CAPNP_LITE
+    static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
+    #endif  // !CAPNP_LITE
+  };
+};
+
+struct LongitudinalPlanSP::Deprecated {
+  Deprecated() = delete;
+
+  class Reader;
+  class Builder;
+  class Pipeline;
+
+  struct _capnpPrivate {
+    CAPNP_DECLARE_STRUCT_HEADER(c5a54619396de4c7, 2, 5)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -838,7 +855,7 @@ struct ModelDataV2SP {
 
 
   struct _capnpPrivate {
-    CAPNP_DECLARE_STRUCT_HEADER(a1680744031fdb2d, 1, 0)
+    CAPNP_DECLARE_STRUCT_HEADER(a1680744031fdb2d, 4, 0)
     #if !CAPNP_LITE
     static constexpr ::capnp::_::RawBrandedSchema const* brand() { return &schema->defaultBrand; }
     #endif  // !CAPNP_LITE
@@ -1645,6 +1662,12 @@ public:
 
   inline  ::uint32_t getEta() const;
 
+  inline float getSpeed() const;
+
+  inline bool getCanceling() const;
+
+  inline bool getResuming() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -1681,6 +1704,15 @@ public:
 
   inline  ::uint32_t getEta();
   inline void setEta( ::uint32_t value);
+
+  inline float getSpeed();
+  inline void setSpeed(float value);
+
+  inline bool getCanceling();
+  inline void setCanceling(bool value);
+
+  inline bool getResuming();
+  inline void setResuming(bool value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -2279,8 +2311,7 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline bool hasDec() const;
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Reader getDec() const;
+  inline typename Deprecated::Reader getDeprecated() const;
 
   inline  ::cereal::LongitudinalPlanSP::LongitudinalPlanSource getLongitudinalPlanSource() const;
 
@@ -2328,12 +2359,8 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline bool hasDec();
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Builder getDec();
-  inline void setDec( ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Reader value);
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Builder initDec();
-  inline void adoptDec(::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>&& value);
-  inline ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl> disownDec();
+  inline typename Deprecated::Builder getDeprecated();
+  inline typename Deprecated::Builder initDeprecated();
 
   inline  ::cereal::LongitudinalPlanSP::LongitudinalPlanSource getLongitudinalPlanSource();
   inline void setLongitudinalPlanSource( ::cereal::LongitudinalPlanSP::LongitudinalPlanSource value);
@@ -2390,7 +2417,7 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Pipeline getDec();
+  inline typename Deprecated::Pipeline getDeprecated();
   inline  ::cereal::LongitudinalPlanSP::SmartCruiseControl::Pipeline getSmartCruiseControl();
   inline  ::cereal::LongitudinalPlanSP::SpeedLimit::Pipeline getSpeedLimit();
   inline  ::cereal::LongitudinalPlanSP::E2eAlerts::Pipeline getE2eAlerts();
@@ -2402,9 +2429,9 @@ private:
 };
 #endif  // !CAPNP_LITE
 
-class LongitudinalPlanSP::DynamicExperimentalControl::Reader {
+class LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader {
 public:
-  typedef DynamicExperimentalControl Reads;
+  typedef DynamicExperimentalControlDEPRECATED Reads;
 
   Reader() = default;
   inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
@@ -2419,7 +2446,7 @@ public:
   }
 #endif  // !CAPNP_LITE
 
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState getState() const;
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState getState() const;
 
   inline bool getEnabled() const;
 
@@ -2437,9 +2464,9 @@ private:
   friend class ::capnp::Orphanage;
 };
 
-class LongitudinalPlanSP::DynamicExperimentalControl::Builder {
+class LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder {
 public:
-  typedef DynamicExperimentalControl Builds;
+  typedef DynamicExperimentalControlDEPRECATED Builds;
 
   Builder() = delete;  // Deleted to discourage incorrect usage.
                        // You can explicitly initialize to nullptr instead.
@@ -2453,8 +2480,8 @@ public:
   inline ::kj::StringTree toString() const { return asReader().toString(); }
 #endif  // !CAPNP_LITE
 
-  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState getState();
-  inline void setState( ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState value);
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState getState();
+  inline void setState( ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState value);
 
   inline bool getEnabled();
   inline void setEnabled(bool value);
@@ -2472,9 +2499,9 @@ private:
 };
 
 #if !CAPNP_LITE
-class LongitudinalPlanSP::DynamicExperimentalControl::Pipeline {
+class LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Pipeline {
 public:
-  typedef DynamicExperimentalControl Pipelines;
+  typedef DynamicExperimentalControlDEPRECATED Pipelines;
 
   inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
@@ -3161,6 +3188,88 @@ public:
   inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
       : _typeless(kj::mv(typeless)) {}
 
+private:
+  ::capnp::AnyPointer::Pipeline _typeless;
+  friend class ::capnp::PipelineHook;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+};
+#endif  // !CAPNP_LITE
+
+class LongitudinalPlanSP::Deprecated::Reader {
+public:
+  typedef Deprecated Reads;
+
+  Reader() = default;
+  inline explicit Reader(::capnp::_::StructReader base): _reader(base) {}
+
+  inline ::capnp::MessageSize totalSize() const {
+    return _reader.totalSize().asPublic();
+  }
+
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const {
+    return ::capnp::_::structString(_reader, *_capnpPrivate::brand());
+  }
+#endif  // !CAPNP_LITE
+
+  inline bool hasDec() const;
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader getDec() const;
+
+private:
+  ::capnp::_::StructReader _reader;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::List;
+  friend class ::capnp::MessageBuilder;
+  friend class ::capnp::Orphanage;
+};
+
+class LongitudinalPlanSP::Deprecated::Builder {
+public:
+  typedef Deprecated Builds;
+
+  Builder() = delete;  // Deleted to discourage incorrect usage.
+                       // You can explicitly initialize to nullptr instead.
+  inline Builder(decltype(nullptr)) {}
+  inline explicit Builder(::capnp::_::StructBuilder base): _builder(base) {}
+  inline operator Reader() const { return Reader(_builder.asReader()); }
+  inline Reader asReader() const { return *this; }
+
+  inline ::capnp::MessageSize totalSize() const { return asReader().totalSize(); }
+#if !CAPNP_LITE
+  inline ::kj::StringTree toString() const { return asReader().toString(); }
+#endif  // !CAPNP_LITE
+
+  inline bool hasDec();
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder getDec();
+  inline void setDec( ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader value);
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder initDec();
+  inline void adoptDec(::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>&& value);
+  inline ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED> disownDec();
+
+private:
+  ::capnp::_::StructBuilder _builder;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::ToDynamic_;
+  friend class ::capnp::Orphanage;
+  template <typename, ::capnp::Kind>
+  friend struct ::capnp::_::PointerHelpers;
+};
+
+#if !CAPNP_LITE
+class LongitudinalPlanSP::Deprecated::Pipeline {
+public:
+  typedef Deprecated Pipelines;
+
+  inline Pipeline(decltype(nullptr)): _typeless(nullptr) {}
+  inline explicit Pipeline(::capnp::AnyPointer::Pipeline&& typeless)
+      : _typeless(kj::mv(typeless)) {}
+
+  inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Pipeline getDec();
 private:
   ::capnp::AnyPointer::Pipeline _typeless;
   friend class ::capnp::PipelineHook;
@@ -4564,6 +4673,20 @@ public:
 
   inline bool getRightLaneChangeEdgeBlock() const;
 
+  inline float getBlendfulCurvature() const;
+
+  inline float getBlendfulTrust() const;
+
+  inline float getModelCurvature() const;
+
+  inline bool getBlendfulGoingAround() const;
+
+  inline float getBlendfulLeftProb() const;
+
+  inline float getBlendfulRightProb() const;
+
+  inline float getBlendfulLaneWidth() const;
+
 private:
   ::capnp::_::StructReader _reader;
   template <typename, ::capnp::Kind>
@@ -4600,6 +4723,27 @@ public:
 
   inline bool getRightLaneChangeEdgeBlock();
   inline void setRightLaneChangeEdgeBlock(bool value);
+
+  inline float getBlendfulCurvature();
+  inline void setBlendfulCurvature(float value);
+
+  inline float getBlendfulTrust();
+  inline void setBlendfulTrust(float value);
+
+  inline float getModelCurvature();
+  inline void setModelCurvature(float value);
+
+  inline bool getBlendfulGoingAround();
+  inline void setBlendfulGoingAround(bool value);
+
+  inline float getBlendfulLeftProb();
+  inline void setBlendfulLeftProb(float value);
+
+  inline float getBlendfulRightProb();
+  inline void setBlendfulRightProb(float value);
+
+  inline float getBlendfulLaneWidth();
+  inline void setBlendfulLaneWidth(float value);
 
 private:
   ::capnp::_::StructBuilder _builder;
@@ -5989,6 +6133,48 @@ inline void ModelManagerSP::DownloadProgress::Builder::setEta( ::uint32_t value)
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
 }
 
+inline float ModelManagerSP::DownloadProgress::Reader::getSpeed() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelManagerSP::DownloadProgress::Builder::getSpeed() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+inline void ModelManagerSP::DownloadProgress::Builder::setSpeed(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool ModelManagerSP::DownloadProgress::Reader::getCanceling() const {
+  return _reader.getDataField<bool>(
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
+}
+
+inline bool ModelManagerSP::DownloadProgress::Builder::getCanceling() {
+  return _builder.getDataField<bool>(
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS);
+}
+inline void ModelManagerSP::DownloadProgress::Builder::setCanceling(bool value) {
+  _builder.setDataField<bool>(
+      ::capnp::bounded<16>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool ModelManagerSP::DownloadProgress::Reader::getResuming() const {
+  return _reader.getDataField<bool>(
+      ::capnp::bounded<17>() * ::capnp::ELEMENTS);
+}
+
+inline bool ModelManagerSP::DownloadProgress::Builder::getResuming() {
+  return _builder.getDataField<bool>(
+      ::capnp::bounded<17>() * ::capnp::ELEMENTS);
+}
+inline void ModelManagerSP::DownloadProgress::Builder::setResuming(bool value) {
+  _builder.setDataField<bool>(
+      ::capnp::bounded<17>() * ::capnp::ELEMENTS, value);
+}
+
 inline bool ModelManagerSP::Chunk::Reader::hasFileName() const {
   return !_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
@@ -6651,45 +6837,21 @@ inline ::capnp::Orphan< ::capnp::List< ::cereal::ModelManagerSP::Override,  ::ca
       ::capnp::bounded<5>() * ::capnp::POINTERS));
 }
 
-inline bool LongitudinalPlanSP::Reader::hasDec() const {
-  return !_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+inline typename LongitudinalPlanSP::Deprecated::Reader LongitudinalPlanSP::Reader::getDeprecated() const {
+  return typename LongitudinalPlanSP::Deprecated::Reader(_reader);
 }
-inline bool LongitudinalPlanSP::Builder::hasDec() {
-  return !_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
-}
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Reader LongitudinalPlanSP::Reader::getDec() const {
-  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::get(_reader.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Builder LongitudinalPlanSP::Builder::getDec() {
-  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::get(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
+inline typename LongitudinalPlanSP::Deprecated::Builder LongitudinalPlanSP::Builder::getDeprecated() {
+  return typename LongitudinalPlanSP::Deprecated::Builder(_builder);
 }
 #if !CAPNP_LITE
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Pipeline LongitudinalPlanSP::Pipeline::getDec() {
-  return  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Pipeline(_typeless.getPointerField(0));
+inline typename LongitudinalPlanSP::Deprecated::Pipeline LongitudinalPlanSP::Pipeline::getDeprecated() {
+  return typename LongitudinalPlanSP::Deprecated::Pipeline(_typeless.noop());
 }
 #endif  // !CAPNP_LITE
-inline void LongitudinalPlanSP::Builder::setDec( ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Reader value) {
-  ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::set(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+inline typename LongitudinalPlanSP::Deprecated::Builder LongitudinalPlanSP::Builder::initDeprecated() {
+  _builder.getPointerField(::capnp::bounded<0>() * ::capnp::POINTERS).clear();
+  return typename LongitudinalPlanSP::Deprecated::Builder(_builder);
 }
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::Builder LongitudinalPlanSP::Builder::initDec() {
-  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::init(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-inline void LongitudinalPlanSP::Builder::adoptDec(
-    ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>&& value) {
-  ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::adopt(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
-}
-inline ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl> LongitudinalPlanSP::Builder::disownDec() {
-  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl>::disown(_builder.getPointerField(
-      ::capnp::bounded<0>() * ::capnp::POINTERS));
-}
-
 inline  ::cereal::LongitudinalPlanSP::LongitudinalPlanSource LongitudinalPlanSP::Reader::getLongitudinalPlanSource() const {
   return _reader.getDataField< ::cereal::LongitudinalPlanSP::LongitudinalPlanSource>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
@@ -6883,44 +7045,44 @@ inline ::capnp::Orphan< ::cereal::LongitudinalPlanSP::E2eAlerts> LongitudinalPla
       ::capnp::bounded<4>() * ::capnp::POINTERS));
 }
 
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState LongitudinalPlanSP::DynamicExperimentalControl::Reader::getState() const {
-  return _reader.getDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState>(
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader::getState() const {
+  return _reader.getDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
 
-inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState LongitudinalPlanSP::DynamicExperimentalControl::Builder::getState() {
-  return _builder.getDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState>(
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::getState() {
+  return _builder.getDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS);
 }
-inline void LongitudinalPlanSP::DynamicExperimentalControl::Builder::setState( ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState value) {
-  _builder.setDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControl::DynamicExperimentalControlState>(
+inline void LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::setState( ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState value) {
+  _builder.setDataField< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::DynamicExperimentalControlState>(
       ::capnp::bounded<0>() * ::capnp::ELEMENTS, value);
 }
 
-inline bool LongitudinalPlanSP::DynamicExperimentalControl::Reader::getEnabled() const {
+inline bool LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader::getEnabled() const {
   return _reader.getDataField<bool>(
       ::capnp::bounded<16>() * ::capnp::ELEMENTS);
 }
 
-inline bool LongitudinalPlanSP::DynamicExperimentalControl::Builder::getEnabled() {
+inline bool LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::getEnabled() {
   return _builder.getDataField<bool>(
       ::capnp::bounded<16>() * ::capnp::ELEMENTS);
 }
-inline void LongitudinalPlanSP::DynamicExperimentalControl::Builder::setEnabled(bool value) {
+inline void LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::setEnabled(bool value) {
   _builder.setDataField<bool>(
       ::capnp::bounded<16>() * ::capnp::ELEMENTS, value);
 }
 
-inline bool LongitudinalPlanSP::DynamicExperimentalControl::Reader::getActive() const {
+inline bool LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader::getActive() const {
   return _reader.getDataField<bool>(
       ::capnp::bounded<17>() * ::capnp::ELEMENTS);
 }
 
-inline bool LongitudinalPlanSP::DynamicExperimentalControl::Builder::getActive() {
+inline bool LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::getActive() {
   return _builder.getDataField<bool>(
       ::capnp::bounded<17>() * ::capnp::ELEMENTS);
 }
-inline void LongitudinalPlanSP::DynamicExperimentalControl::Builder::setActive(bool value) {
+inline void LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder::setActive(bool value) {
   _builder.setDataField<bool>(
       ::capnp::bounded<17>() * ::capnp::ELEMENTS, value);
 }
@@ -7471,6 +7633,45 @@ inline bool LongitudinalPlanSP::E2eAlerts::Builder::getLeadDepartAlert() {
 inline void LongitudinalPlanSP::E2eAlerts::Builder::setLeadDepartAlert(bool value) {
   _builder.setDataField<bool>(
       ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool LongitudinalPlanSP::Deprecated::Reader::hasDec() const {
+  return !_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline bool LongitudinalPlanSP::Deprecated::Builder::hasDec() {
+  return !_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
+}
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader LongitudinalPlanSP::Deprecated::Reader::getDec() const {
+  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::get(_reader.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder LongitudinalPlanSP::Deprecated::Builder::getDec() {
+  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::get(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+#if !CAPNP_LITE
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Pipeline LongitudinalPlanSP::Deprecated::Pipeline::getDec() {
+  return  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Pipeline(_typeless.getPointerField(0));
+}
+#endif  // !CAPNP_LITE
+inline void LongitudinalPlanSP::Deprecated::Builder::setDec( ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Reader value) {
+  ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED::Builder LongitudinalPlanSP::Deprecated::Builder::initDec() {
+  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::init(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
+}
+inline void LongitudinalPlanSP::Deprecated::Builder::adoptDec(
+    ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>&& value) {
+  ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::adopt(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
+}
+inline ::capnp::Orphan< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED> LongitudinalPlanSP::Deprecated::Builder::disownDec() {
+  return ::capnp::_::PointerHelpers< ::cereal::LongitudinalPlanSP::DynamicExperimentalControlDEPRECATED>::disown(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
 inline bool OnroadEventSP::Reader::hasEvents() const {
@@ -8951,6 +9152,104 @@ inline bool ModelDataV2SP::Builder::getRightLaneChangeEdgeBlock() {
 inline void ModelDataV2SP::Builder::setRightLaneChangeEdgeBlock(bool value) {
   _builder.setDataField<bool>(
       ::capnp::bounded<17>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getBlendfulCurvature() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getBlendfulCurvature() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulCurvature(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<1>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getBlendfulTrust() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getBlendfulTrust() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulTrust(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getModelCurvature() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getModelCurvature() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setModelCurvature(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<3>() * ::capnp::ELEMENTS, value);
+}
+
+inline bool ModelDataV2SP::Reader::getBlendfulGoingAround() const {
+  return _reader.getDataField<bool>(
+      ::capnp::bounded<18>() * ::capnp::ELEMENTS);
+}
+
+inline bool ModelDataV2SP::Builder::getBlendfulGoingAround() {
+  return _builder.getDataField<bool>(
+      ::capnp::bounded<18>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulGoingAround(bool value) {
+  _builder.setDataField<bool>(
+      ::capnp::bounded<18>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getBlendfulLeftProb() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getBlendfulLeftProb() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulLeftProb(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<4>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getBlendfulRightProb() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getBlendfulRightProb() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulRightProb(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<5>() * ::capnp::ELEMENTS, value);
+}
+
+inline float ModelDataV2SP::Reader::getBlendfulLaneWidth() const {
+  return _reader.getDataField<float>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+}
+
+inline float ModelDataV2SP::Builder::getBlendfulLaneWidth() {
+  return _builder.getDataField<float>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS);
+}
+inline void ModelDataV2SP::Builder::setBlendfulLaneWidth(float value) {
+  _builder.setDataField<float>(
+      ::capnp::bounded<6>() * ::capnp::ELEMENTS, value);
 }
 
 }  // namespace
