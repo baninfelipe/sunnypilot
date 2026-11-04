@@ -88,11 +88,15 @@ class TestEps48A2(unittest.TestCase):
     self.assertEqual(self.client.result.status, "timeout")
 
   def test_partial_response_retained_on_timeout(self):
-    self.start()
-    self.client.update(packet(frames()[0]), self.now + 1)
-    self.client.update([], self.now + FRAME_TIMEOUT_NS + 1)
-    self.assertEqual(self.client.result.response, response()[:6])
-    self.assertFalse(self.client.result.sampleValid)
+    for pending in (False, True):
+      self.client = Eps48A2Client(0, "startup", True)
+      self.start()
+      if pending:
+        self.client.update(packet(bytes.fromhex("037f227800000000")), self.now + 1)
+      self.client.update(packet(frames()[0]), self.now + 2)
+      self.client.update([], self.now + FRAME_TIMEOUT_NS + 2)
+      self.assertEqual(self.client.result.response, response()[:6])
+      self.assertFalse(self.client.result.sampleValid)
 
   def test_wrong_bus_address_and_unsolicited_response(self):
     self.assertEqual(self.client.update(packet(frames()[0]), self.now), [CanData(TX_ADDR, REQUEST, 0)])
