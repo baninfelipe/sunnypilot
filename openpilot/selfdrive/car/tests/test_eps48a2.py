@@ -254,7 +254,7 @@ class TestEps48A2(unittest.TestCase):
       if enabled:
         raise OSError("OBD route not acknowledged")
 
-    result = startup_probe(CP, lambda: [], sent.extend, set_obd)
+    result = startup_probe(CP, list, sent.extend, set_obd)
     self.assertEqual(result.status, "transportError")
     self.assertEqual(sent, [])
     self.assertEqual(switches, [True, False])
@@ -263,7 +263,7 @@ class TestEps48A2(unittest.TestCase):
       now[0] += int(seconds * 1e9)
 
     switches.clear()
-    result = startup_probe(CP, lambda: [], sent.extend, switches.append, clock=lambda: now[0], sleep=sleep)
+    result = startup_probe(CP, list, sent.extend, switches.append, clock=lambda: now[0], sleep=sleep)
     self.assertEqual(result.status, "timeout")
     self.assertEqual(result.bus, OBD_BUS)
     self.assertEqual(switches, [True, False])
