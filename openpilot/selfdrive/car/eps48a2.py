@@ -2,7 +2,23 @@
 import time
 
 from opendbc.car.honda.eps48a2 import Eps48A2Client, Eps48A2Result, b510_layout_verified
-from opendbc.car.honda.values import CAR
+from opendbc.car.honda.values import CAR, HondaFlags, HondaSafetyFlags
+from opendbc.car import structs
+
+
+def configure_onroad_capture(CP, replay: bool = False):
+  if (replay or CP.passive or CP.carFingerprint != CAR.HONDA_CITY_7G or
+      not CP.flags & HondaFlags.BOSCH_RADARLESS or CP.flags & HondaFlags.BOSCH_CANFD or
+      len(CP.safetyConfigs) != 1 or CP.safetyConfigs[0].safetyModel != structs.CarParams.SafetyModel.hondaBosch):
+    return None
+  CP.safetyConfigs[0].safetyParam |= int(HondaSafetyFlags.EPS_48A2)
+  return Eps48A2Client(0, "onroad", b510_layout_verified(CP))
+
+
+def onroad_capture_ready(CP, panda_states) -> bool:
+  return (len(CP.safetyConfigs) == 1 and len(panda_states) == 1 and panda_states[0].safetyModel == structs.CarParams.SafetyModel.hondaBosch and
+          panda_states[0].safetyParam == CP.safetyConfigs[0].safetyParam and
+          bool(panda_states[0].safetyParam & HondaSafetyFlags.EPS_48A2))
 
 
 def startup_probe(CP, can_recv, can_send, replay: bool = False,

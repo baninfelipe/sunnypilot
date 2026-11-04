@@ -67,6 +67,7 @@ class HondaSafetyFlags(IntFlag):
   NIDEC_ALT = 4
   RADARLESS = 8
   BOSCH_CANFD = 16
+  EPS_48A2 = 32  # bounded City EPS read-only diagnostic capture
 
 
 class HondaFlags(IntFlag):

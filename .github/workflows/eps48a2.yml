@@ -21,7 +21,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install numpy pycapnp==2.1.0 pycryptodome cffi zstandard tqdm ruff gcovr
+      - run: python -m pip install numpy pycapnp==2.1.0 pycryptodome cffi zstandard tqdm ruff gcovr comma-deps-gcc-arm-none-eabi==13.2.1.post103
+      - name: Check bundled Panda application
+        run: python panda/scripts/build_eps48a2.py --check
+      - name: Reproduce bundled Panda application from source
+        run: |
+          python panda/scripts/build_eps48a2.py --build --check
+          git diff --exit-code -- panda/board/obj/panda_h7.bin.signed panda/board/obj/panda_h7/main.bin docs/EPS_48A2_FIRMWARE.json
       - name: Diagnostic transport and rlog serialization
         run: python -m unittest openpilot.selfdrive.car.tests.test_eps48a2
       - name: Complete safety suite with UBSan

@@ -74,7 +74,7 @@ class Eps48A2Client:
     return CanData(TX_ADDR, REQUEST, self.result.bus)
 
   def _finish(self, status: str, now_ns: int, detail: str = "") -> None:
-    if self._payload and not self.result.response:
+    if self._payload:
       self.result.response = bytes(self._payload)
     self.result.status = status
     self.result.detail = detail

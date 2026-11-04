@@ -21,7 +21,7 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.helpers import convert_carControlSP, convert_to_capnp
-from openpilot.selfdrive.car.eps48a2 import startup_probe
+from openpilot.selfdrive.car.eps48a2 import startup_probe, configure_onroad_capture, onroad_capture_ready
 from opendbc.car.honda.eps48a2 import Eps48A2Result
 
 from openpilot.sunnypilot.mads.helpers import set_alternative_experience, set_car_specific_params
@@ -140,6 +140,9 @@ class Car:
       safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
+    self.eps48a2_client = configure_onroad_capture(self.CP, replay=REPLAY)
+    self.eps48a2_packets = []
+
     if self.CP.secOcRequired:
       # Copy user key if available
       try:
@@ -193,6 +196,7 @@ class Car:
 
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     can_list = can_capnp_to_list(can_strs)
+    self.eps48a2_packets = can_list
 
     # Update carState from CAN
     CS, CS_SP = self.CI.update(can_list)
@@ -283,9 +287,15 @@ class Car:
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, convert_carControlSP(CC_SP), now_nanos)
+      if self.eps48a2_client is not None:
+        ready = CS.canValid and self.sm.all_checks(['pandaStates']) and onroad_capture_ready(self.CP, self.sm['pandaStates'])
+        can_sends.extend(self.eps48a2_client.update(self.eps48a2_packets, now_nanos, allow_request=ready))
+        self.eps48a2_result = self.eps48a2_client.result
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
+    elif self.eps48a2_client is not None:
+      self.eps48a2_client.pause(time.monotonic_ns(), "carControl unavailable")
 
   def step(self):
     CS, CS_SP, RD = self.state_update()
@@ -296,6 +306,8 @@ class Car:
                    self.sm.seen['onroadEvents'])
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'], self.sm['carControlSP'])
+    elif self.eps48a2_client is not None:
+      self.eps48a2_client.pause(time.monotonic_ns(), "controls not initialized")
 
     self.initialized_prev = initialized
     self.CS_prev = CS

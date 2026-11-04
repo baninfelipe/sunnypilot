@@ -6,7 +6,9 @@ from opendbc.car.honda.eps48a2 import (Eps48A2Client, FLOW_CONTROL, FRAME_TIMEOU
                                       RESPONSE_TIMEOUT_NS, RX_ADDR, TX_ADDR, b510_layout_verified)
 from opendbc.car.honda.values import CAR
 from openpilot.cereal import log
-from openpilot.selfdrive.car.eps48a2 import startup_probe
+from openpilot.selfdrive.car.eps48a2 import startup_probe, configure_onroad_capture, onroad_capture_ready
+from opendbc.car import structs
+from opendbc.car.honda.values import HondaFlags, HondaSafetyFlags
 from openpilot.tools.debug.eps48a2 import records
 
 
@@ -88,11 +90,15 @@ class TestEps48A2(unittest.TestCase):
     self.assertEqual(self.client.result.status, "timeout")
 
   def test_partial_response_retained_on_timeout(self):
-    self.start()
-    self.client.update(packet(frames()[0]), self.now + 1)
-    self.client.update([], self.now + FRAME_TIMEOUT_NS + 1)
-    self.assertEqual(self.client.result.response, response()[:6])
-    self.assertFalse(self.client.result.sampleValid)
+    for pending in (False, True):
+      self.client = Eps48A2Client(0, "startup", True)
+      self.start()
+      if pending:
+        self.client.update(packet(bytes.fromhex("037f227800000000")), self.now + 1)
+      self.client.update(packet(frames()[0]), self.now + 2)
+      self.client.update([], self.now + FRAME_TIMEOUT_NS + 2)
+      self.assertEqual(self.client.result.response, response()[:6])
+      self.assertFalse(self.client.result.sampleValid)
 
   def test_wrong_bus_address_and_unsolicited_response(self):
     self.assertEqual(self.client.update(packet(frames()[0]), self.now), [CanData(TX_ADDR, REQUEST, 0)])
@@ -226,6 +232,28 @@ class TestEps48A2(unittest.TestCase):
     def broken_receive():
       raise OSError("test transport failure")
     self.assertEqual(startup_probe(CP, broken_receive, send).status, "transportError")
+
+  def test_onroad_configuration_and_panda_acknowledgement(self):
+    CP = structs.CarParams.new_message(carFingerprint=CAR.HONDA_CITY_7G, flags=int(HondaFlags.BOSCH | HondaFlags.BOSCH_RADARLESS))
+    CP.init("safetyConfigs", 1)
+    CP.safetyConfigs[0].safetyModel = structs.CarParams.SafetyModel.hondaBosch
+    CP.safetyConfigs[0].safetyParam = int(HondaSafetyFlags.RADARLESS)
+    self.assertIsNone(configure_onroad_capture(CP, replay=True))
+    CP.passive = True
+    self.assertIsNone(configure_onroad_capture(CP))
+    CP.passive = False
+    self.assertIsNotNone(configure_onroad_capture(CP))
+    self.assertEqual(CP.safetyConfigs[0].safetyParam, int(HondaSafetyFlags.RADARLESS | HondaSafetyFlags.EPS_48A2))
+    panda = SimpleNamespace(safetyModel=structs.CarParams.SafetyModel.elm327, safetyParam=1)
+    self.assertFalse(onroad_capture_ready(CP, [panda]))
+    panda.safetyModel = structs.CarParams.SafetyModel.hondaBosch
+    self.assertFalse(onroad_capture_ready(CP, [panda]))
+    panda.safetyParam = CP.safetyConfigs[0].safetyParam
+    self.assertTrue(onroad_capture_ready(CP, [panda]))
+    self.assertFalse(onroad_capture_ready(CP, []))
+    self.assertFalse(onroad_capture_ready(CP, [panda, panda]))
+    CP.carFingerprint = "OTHER_HONDA"
+    self.assertIsNone(configure_onroad_capture(CP))
 
 
 if __name__ == "__main__":
