@@ -43,6 +43,10 @@ static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
 static bool honda_bosch_canfd = false;
 static bool honda_nidec_hybrid = false;
+static bool honda_eps48a2_enabled = false;
+static bool honda_eps48a2_request_seen = false;
+static bool honda_eps48a2_request_pending = false;
+static uint32_t honda_eps48a2_request_ts = 0U;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -93,6 +97,10 @@ static int HONDA_GET_INTERCEPTOR(const CANPacket_t *msg) {
 }
 
 static void honda_rx_hook(const CANPacket_t *msg) {
+  // This diagnostic state never changes controls_allowed or actuator limits.
+  if (honda_eps48a2_request_pending && (safety_get_ts_elapsed(microsecond_timer_get(), honda_eps48a2_request_ts) > 2000000U)) {
+    honda_eps48a2_request_pending = false;
+  }
   const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || ((honda_hw == HONDA_NIDEC) && !enable_gas_interceptor);
   unsigned int pt_bus = honda_get_pt_bus();
 
@@ -215,6 +223,28 @@ static void honda_rx_hook(const CANPacket_t *msg) {
 }
 
 static bool honda_tx_hook(const CANPacket_t *msg) {
+  if (msg->addr == 0x18DA30F1U) {
+    bool diag_tx = false;
+    if (honda_eps48a2_enabled && (msg->bus == 1U) && (GET_LEN(msg) == 8U)) {
+      uint32_t now = microsecond_timer_get();
+      uint32_t elapsed = safety_get_ts_elapsed(now, honda_eps48a2_request_ts);
+      uint64_t payload = GET_BYTES_64_LE(msg, 0, 8);
+      // Exact SF: 03 22 48 A2 00 00 00 00. At most two requests per second.
+      if ((payload == 0x00000000A2482203ULL) && (!honda_eps48a2_request_seen || (elapsed >= 500000U))) {
+        honda_eps48a2_request_seen = true;
+        honda_eps48a2_request_pending = true;
+        honda_eps48a2_request_ts = now;
+        diag_tx = true;
+      }
+      // One FC after a permitted request. The host validates the response FF.
+      if ((payload == 0x00000000000A0030ULL) && honda_eps48a2_request_pending &&
+          (elapsed <= 2000000U)) {
+        honda_eps48a2_request_pending = false;
+        diag_tx = true;
+      }
+    }
+    return diag_tx;
+  }
   const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
     .max_accel = 200,   // accel is used for brakes
     .min_accel = -350,
@@ -354,6 +384,9 @@ static bool honda_tx_hook(const CANPacket_t *msg) {
 }
 
 static safety_config honda_nidec_init(uint16_t param) {
+  honda_eps48a2_enabled = false;
+  honda_eps48a2_request_seen = false;
+  honda_eps48a2_request_pending = false;
   // 0x1FA is dynamically forwarded based on stock AEB
   // 0xE4 is steering on all cars except CRV and RDX, 0x194 for CRV and RDX,
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
@@ -478,6 +511,20 @@ static safety_config honda_bosch_init(uint16_t param) {
     {0x33D, 0, 8, .check_relay = true},
   };
 
+  static CanMsg HONDA_RADARLESS_EPS48A2_TX_MSGS[] = {
+    {0xE4, 0, 5, .check_relay = true},
+    {0x296, 2, 4, .check_relay = false},
+    {0x33D, 0, 8, .check_relay = true},
+    {0x18DA30F1, 1, 8, .check_relay = false},
+  };
+  static CanMsg HONDA_RADARLESS_LONG_EPS48A2_TX_MSGS[] = {
+    {0xE4, 0, 5, .check_relay = true},
+    {0x33D, 0, 8, .check_relay = true},
+    {0x1C8, 0, 8, .check_relay = true},
+    {0x30C, 0, 8, .check_relay = true},
+    {0x18DA30F1, 1, 8, .check_relay = false},
+  };
+
   const uint16_t HONDA_PARAM_ALT_BRAKE = 1;
   const uint16_t HONDA_PARAM_RADARLESS = 8;
   const uint16_t HONDA_PARAM_BOSCH_CANFD = 16;
@@ -506,6 +553,10 @@ static safety_config honda_bosch_init(uint16_t param) {
   honda_brake_switch_prev = false;
   honda_bosch_radarless = GET_FLAG(param, HONDA_PARAM_RADARLESS);
   honda_bosch_canfd = GET_FLAG(param, HONDA_PARAM_BOSCH_CANFD);
+  honda_eps48a2_enabled = GET_FLAG(param, 32U) && honda_bosch_radarless && !honda_bosch_canfd;
+  honda_eps48a2_request_seen = false;
+  honda_eps48a2_request_pending = false;
+  honda_eps48a2_request_ts = 0U;
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
 
@@ -533,8 +584,14 @@ static safety_config honda_bosch_init(uint16_t param) {
   if (honda_bosch_radarless) {
     if (honda_bosch_long) {
       SET_TX_MSGS(HONDA_RADARLESS_LONG_TX_MSGS, ret);
+      if (honda_eps48a2_enabled) {
+        SET_TX_MSGS(HONDA_RADARLESS_LONG_EPS48A2_TX_MSGS, ret);
+      }
     } else {
       SET_TX_MSGS(HONDA_RADARLESS_TX_MSGS, ret);
+      if (honda_eps48a2_enabled) {
+        SET_TX_MSGS(HONDA_RADARLESS_EPS48A2_TX_MSGS, ret);
+      }
     }
   } else if (honda_bosch_canfd) {
     SET_TX_MSGS(HONDA_CANFD_TX_MSGS, ret);
