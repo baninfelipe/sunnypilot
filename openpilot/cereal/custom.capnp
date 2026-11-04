@@ -453,6 +453,51 @@ struct BackupManagerSP @0xf98d843bfd7004a3 {
 
 struct CarStateSP @0xb86e6369214c01c8 {
   speedLimit @0 :Float32;
+  eps48a2 @1 :Eps48A2;
+
+  struct Eps48A2 {
+    enabled @0 :Bool;
+    mode @1 :Mode;
+    status @2 :Status;
+    sequence @3 :UInt32;
+    requestMonoTime @4 :UInt64;
+    firstResponseMonoTime @5 :UInt64;
+    responseMonoTime @6 :UInt64;
+    bus @7 :UInt8;
+    txAddress @8 :UInt32;
+    rxAddress @9 :UInt32;
+    response @10 :Data;
+    negativeResponseCode @11 :UInt16;
+    request @12 :Int16;
+    requestFlags @13 :UInt8;
+    directional @14 :Int16;
+    returnSdiv32 @15 :Int16;
+    q @16 :Int16;
+    internalStatus @17 :UInt8;
+    sampleValid @18 :Bool;
+    layoutVerified @19 :Bool;
+    detail @20 :Text;
+    responseFrames @21 :UInt16;
+    requestTxSeen @22 :Bool;
+    flowControlTxSeen @23 :Bool;
+
+    enum Mode {
+      disabled @0;
+      startup @1;
+      onroad @2;
+    }
+    enum Status {
+      disabled @0;
+      skipped @1;
+      waiting @2;
+      pending @3;
+      ok @4;
+      negativeResponse @5;
+      timeout @6;
+      protocolError @7;
+      transportError @8;
+    }
+  }
 }
 
 struct LiveMapDataSP @0xf416ec09499d9d19 {
