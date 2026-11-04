@@ -1,6 +1,6 @@
 import unittest
 
-from opendbc.car.honda.eps48a2 import FLOW_CONTROL, REQUEST, RX_ADDR, TX_ADDR
+from opendbc.car.honda.eps48a2 import FLOW_CONTROL, OBD_BUS, REQUEST, RX_ADDR, TX_ADDR
 from opendbc.car.honda.values import HondaSafetyFlags
 from opendbc.car.structs import CarParams
 from opendbc.safety.tests import test_honda
@@ -25,10 +25,10 @@ class Eps48A2SafetyTests:
   def _tx(self, msg):
     return self.safety.safety_tx_hook(msg)
 
-  def diag(self, data=REQUEST, bus=0, address=TX_ADDR):
+  def diag(self, data=REQUEST, bus=OBD_BUS, address=TX_ADDR):
     return libsafety_py.make_CANPacket(address, bus, data)
 
-  def response(self, data=FIRST_FRAME, bus=0, address=RX_ADDR):
+  def response(self, data=FIRST_FRAME, bus=OBD_BUS, address=RX_ADDR):
     return libsafety_py.make_CANPacket(address, bus, data)
 
   def test_diag_request_rate_and_control_independence(self):
@@ -81,7 +81,7 @@ class Eps48A2SafetyTests:
   def test_diag_only_exact_bus_address_and_dlc(self):
     for length in (*range(8), 12, 16, 64):
       self.assertFalse(self._tx(self.diag(REQUEST[:length].ljust(length, b"\x00"))))
-    for bus in (1, 2, 3):
+    for bus in (0, 2, 3):
       self.assertFalse(self._tx(self.diag(bus=bus)))
     for address in (TX_ADDR + 1, TX_ADDR + 0x100, RX_ADDR):
       self.assertFalse(self._tx(self.diag(address=address)))
@@ -151,7 +151,7 @@ class Eps48A2SafetyTests:
     for name in unittest.defaultTestLoader.getTestCaseNames(self.BASELINE):
       case = self.BASELINE(name)
       case.SAFETY_PARAM = self.BASELINE.SAFETY_PARAM | HondaSafetyFlags.EPS_48A2
-      case.TX_MSGS = self.BASELINE.TX_MSGS + [[TX_ADDR, 0]]
+      case.TX_MSGS = self.BASELINE.TX_MSGS + [[TX_ADDR, OBD_BUS]]
       result = unittest.TestResult()
       case.run(result)
       self.assertEqual(result.errors, [], name)

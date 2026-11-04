@@ -30,6 +30,8 @@ jobs:
           git diff --exit-code -- panda/board/obj/panda_h7.bin.signed panda/board/obj/panda_h7/main.bin docs/EPS_48A2_FIRMWARE.json
       - name: Diagnostic transport and rlog serialization
         run: python -m unittest openpilot.selfdrive.car.tests.test_eps48a2
+      - name: Production Panda safety-mode OBD routing
+        run: python panda/tests/safety/test_eps48a2_routing.py
       - name: Complete safety suite with UBSan
         run: python -m unittest discover -s opendbc_repo/opendbc/safety/tests
       - name: Complete safety suite with coverage instrumentation

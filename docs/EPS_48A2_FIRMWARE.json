@@ -2,9 +2,9 @@
   "compiler_package": "13.2.1.post103",
   "compiler": "arm-none-eabi-gcc (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 13.2.1 20231009",
   "version": "DEV-EPS48A2-DEBUG",
-  "source_sha256": "53915a8a8218778a230a021454c448ab0fcc45b4a612544e26ae966a38be2104",
-  "signed_sha256": "8bb56d59f73aed46c053aa3374eacfc61bf84fa47aadd441da01ff1076aef3a8",
-  "signed_bytes": 103288,
+  "source_sha256": "0adfae963237d6a020f5db1fa447e80d0629719d46486308268554c53db83258",
+  "signed_sha256": "c5ef7b601a63179774d910a8acc3fc7b029482675e124c5a61327eab51e3acd0",
+  "signed_bytes": 103324,
   "application_address": "0x08020000",
   "signing": "existing public development key; existing debug bootstub convention",
   "bootstub_modified": false

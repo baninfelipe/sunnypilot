@@ -119,7 +119,7 @@ class Car:
       self.CP = self.CI.CP
       self.CP_SP = self.CI.CP_SP
 
-      self.eps48a2_result = startup_probe(self.CP, *self.can_callbacks, replay=REPLAY)
+      self.eps48a2_result = startup_probe(self.CP, *self.can_callbacks, obd_callback(self.params), replay=REPLAY)
 
       # continue onto next fingerprinting step in pandad
       self.params.put_bool("FirmwareQueryDone", True, block=True)

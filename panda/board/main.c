@@ -71,7 +71,14 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
       set_intercept_relay(true, false);
       heartbeat_counter = 0U;
       heartbeat_lost = false;
-      current_board->set_can_mode(CAN_MODE_NORMAL);
+      if ((mode_copy == SAFETY_HONDA_BOSCH) && honda_eps48a2_enabled) {
+        // City EPS diagnostics are reachable through OBD-II, not camera/PT.
+        // Keep bus 1 on OBD while Honda actuation stays on buses 0 and 2.
+        can_clear_send(CANIF_FROM_CAN_NUM(1), 1);
+        current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+      } else {
+        current_board->set_can_mode(CAN_MODE_NORMAL);
+      }
       can_silent = false;
       break;
   }

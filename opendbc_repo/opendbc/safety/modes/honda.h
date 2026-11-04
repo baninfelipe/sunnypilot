@@ -225,7 +225,7 @@ static void honda_rx_hook(const CANPacket_t *msg) {
 static bool honda_tx_hook(const CANPacket_t *msg) {
   if (msg->addr == 0x18DA30F1U) {
     bool diag_tx = false;
-    if (honda_eps48a2_enabled && (msg->bus == 0U) && (GET_LEN(msg) == 8U)) {
+    if (honda_eps48a2_enabled && (msg->bus == 1U) && (GET_LEN(msg) == 8U)) {
       uint32_t now = microsecond_timer_get();
       uint32_t elapsed = safety_get_ts_elapsed(now, honda_eps48a2_request_ts);
       uint64_t payload = GET_BYTES_64_LE(msg, 0, 8);
@@ -515,14 +515,14 @@ static safety_config honda_bosch_init(uint16_t param) {
     {0xE4, 0, 5, .check_relay = true},
     {0x296, 2, 4, .check_relay = false},
     {0x33D, 0, 8, .check_relay = true},
-    {0x18DA30F1, 0, 8, .check_relay = false},
+    {0x18DA30F1, 1, 8, .check_relay = false},
   };
   static CanMsg HONDA_RADARLESS_LONG_EPS48A2_TX_MSGS[] = {
     {0xE4, 0, 5, .check_relay = true},
     {0x33D, 0, 8, .check_relay = true},
     {0x1C8, 0, 8, .check_relay = true},
     {0x30C, 0, 8, .check_relay = true},
-    {0x18DA30F1, 0, 8, .check_relay = false},
+    {0x18DA30F1, 1, 8, .check_relay = false},
   };
 
   const uint16_t HONDA_PARAM_ALT_BRAKE = 1;
