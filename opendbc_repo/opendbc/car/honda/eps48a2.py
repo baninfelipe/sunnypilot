@@ -108,6 +108,7 @@ class Eps48A2Client:
       self.result.negativeResponseCode = 0
       if self.result.layoutVerified:
         data = payload[3:]
+
         def signed(at):
           return int.from_bytes(data[at:at + 2], "big", signed=True)
         self.result.request = signed(0)
