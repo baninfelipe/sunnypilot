@@ -1,28 +1,33 @@
 """Honda City EPS capture adapters. Startup probing finishes before ControlsReady."""
 import time
 
-from opendbc.car.honda.eps48a2 import Eps48A2Client, Eps48A2Result, b510_layout_verified
+from opendbc.car.honda.eps48a2 import Eps48A2Client, Eps48A2Result, OBD_BUS, b510_layout_verified
 from opendbc.car.honda.values import CAR
 
 
-def startup_probe(CP, can_recv, can_send, replay: bool = False,
+def startup_probe(CP, can_recv, can_send, set_obd_multiplexing, replay: bool = False,
                   clock=time.monotonic_ns, sleep=time.sleep) -> Eps48A2Result:
   if CP.carFingerprint != CAR.HONDA_CITY_7G or replay:
     return Eps48A2Result(status="skipped", detail="unsupported platform or replay")
-  client = Eps48A2Client(0, "startup", b510_layout_verified(CP))
-  started = clock()
+  client = Eps48A2Client(OBD_BUS, "startup", b510_layout_verified(CP))
   try:
-    # Fingerprinting leaves OBD multiplexing disabled. Use the directly connected
-    # City PT bus, not a cached firmware-query bus that might have used OBD routing.
-    can_recv()
-    while not client.completed and clock() - started <= 2_100_000_000:
-      outgoing = client.update(can_recv(), clock())
-      if outgoing:
-        can_send(outgoing)
+    try:
+      # get_car restores normal routing. Re-enable the same acknowledged OBD
+      # route used by Honda firmware queries before sending anything on bus 1.
+      set_obd_multiplexing(True)
+      can_recv()
+      started = clock()
+      while not client.completed and clock() - started <= 2_100_000_000:
+        outgoing = client.update(can_recv(), clock())
+        if outgoing:
+          can_send(outgoing)
+        if not client.completed:
+          sleep(0.005)
       if not client.completed:
-        sleep(0.005)
-    if not client.completed:
-      client.pause(clock(), "startup capture budget exhausted")
+        client.pause(clock(), "startup capture budget exhausted")
+    finally:
+      # Restore fingerprinting's normal route, including on send/receive errors.
+      set_obd_multiplexing(False)
   except Exception as exc:
     client.result.status = "transportError"
     client.result.sampleValid = False

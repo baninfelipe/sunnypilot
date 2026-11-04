@@ -1,8 +1,8 @@
 # Honda City EPS 48A2 startup capture
 
-This branch makes one read-only `22 48 A2` request after vehicle identification and before `FirmwareQueryDone` / `ControlsReady`. It uses the normal `card → sendcan → pandad → Panda` path while fingerprinting safety is still selected. It does not change the EPS firmware, UDS session, security access, actuation commands, Panda safety rules or OBD routing.
+This branch makes one read-only `22 48 A2` request after vehicle identification and before `FirmwareQueryDone` / `ControlsReady`. It uses the normal `card → sendcan → pandad → Panda` path while fingerprinting safety is still selected. It enables OBD multiplexing through the same acknowledged callback used by fingerprinting and restores normal routing in a finally block, including on errors. It does not change the EPS firmware, UDS session, security access, actuation commands or Panda safety rules.
 
-The probe runs only for `HONDA_CITY_7G`, on its directly connected powertrain bus 0. The physical request address `0x18DA30F1` is the EPS address in the Honda firmware database; the response address is `0x18DAF130`. The probe has a 500 ms inter-frame timeout and an absolute two-second response deadline, including response-pending replies. Identification continues if the ECU rejects or ignores the request.
+The probe runs only for `HONDA_CITY_7G`, on **bus 1 routed to OBD-II**, where the City exposes EPS diagnostics. It requires the physical OBD-II connection through comma power and the harness; camera/PT bus 0 is not a substitute. The physical request address `0x18DA30F1` is the EPS address in the Honda firmware database; the response address is `0x18DAF130`. The probe has a 500 ms inter-frame timeout and an absolute two-second response deadline after routing is acknowledged, including response-pending replies. Identification continues if the ECU rejects or ignores the request.
 
 ## Find the result in a full rlog
 

@@ -5,6 +5,7 @@ from opendbc.car.can_definitions import CanData
 
 TX_ADDR = 0x18DA30F1
 RX_ADDR = 0x18DAF130
+OBD_BUS = 1
 REQUEST = bytes.fromhex("032248a200000000")
 FLOW_CONTROL = bytes.fromhex("30000a0000000000")
 PREFIX = bytes.fromhex("6248a2")
@@ -23,7 +24,7 @@ class Eps48A2Result:
   requestMonoTime: int = 0
   firstResponseMonoTime: int = 0
   responseMonoTime: int = 0
-  bus: int = 0
+  bus: int = OBD_BUS
   txAddress: int = TX_ADDR
   rxAddress: int = RX_ADDR
   response: bytes = b""
@@ -52,8 +53,8 @@ def b510_layout_verified(CP) -> bool:
 
 class Eps48A2Client:
   def __init__(self, bus: int, mode: str, layout_verified: bool = False):
-    if mode not in ("startup", "onroad") or bus != 0:
-      raise ValueError("48A2 capture is restricted to the City powertrain bus 0")
+    if mode not in ("startup", "onroad") or bus != OBD_BUS:
+      raise ValueError("48A2 capture requires the City OBD-II bus 1 with OBD multiplexing")
     self.result = Eps48A2Result(enabled=True, mode=mode, status="waiting", bus=bus, layoutVerified=layout_verified)
     self.active = False
     self.completed = False
